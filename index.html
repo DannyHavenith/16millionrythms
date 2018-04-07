@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>16 miljoen ritmes</title>
+
+<link rel="stylesheet" type="text/css" href="css/millionrythms.css">
+<script 
+	src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.0.9/howler.js" 
+	integrity="sha256-xsVU5+Pp+zyekT9kCPWvTDasBm4JDKwz24yxQO04NkA=" 
+	crossorigin="anonymous">
+</script>
+	
+<script 
+	src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.js" 
+	integrity="sha256-2Kok7MbOyxpgUVvAk/HJ2jigOSYS2auK4Pfzbm7uH60=" 
+	crossorigin="anonymous">
+</script>
+
+
+<script>
+/**
+ * Edit and Play a djembe rythm
+ * Copyright (C) Danny Havenith 2018
+ */
+ 
+/*
+ * SETUP
+ * 
+ */
+var bass = new Howl({
+	  src: ['audio/bass.mp3']
+	});
+var tone = new Howl({
+	  src: ['audio/tone.mp3']
+	});
+var slap = new Howl({
+	  src: ['audio/slap.mp3']
+	});
+
+var pause = new Howl({
+	  src: ['audio/pause.mp3']
+	});
+
+var metronome = new Howl({
+	  src: ['audio/x.mp3']
+	});
+	
+var sounds = [ pause, bass, tone, slap];
+var sequence = [ 1, 3, 2, 2, 3, 0, 1, 3, 0, 1, 3, 0];
+var accompaniment = [ 3, 0 , 2, 3, 0 , 0, 3, 0 , 2, 3, 0 , 0];
+var index = 0;
+var playAccompaniment = false;
+
+function playNext() {
+
+	if (index >= sequence.length) {
+		index = 0;
+	}
+	sounds[sequence[index]].play();
+	if (playAccompaniment && (index%3 == 0))
+	{
+		//sounds[accompaniment[index]].play();
+		metronome.play();
+	}
+
+	var lastPlayedIndex = index;
+	++index;
+	
+	// because mp3 sounds have a startup delay of about 50ms, 
+	// delay the highlighting a little.
+	setTimeout( function (){
+		$('#rythmTable td').removeClass('highlighted');
+		$('.c' + lastPlayedIndex).addClass('highlighted');
+	}, 50);
+}
+
+function sequenceToTable( sequence)
+{
+	var images = [
+		"<img src='images/N.png'>",
+		"<img src='images/B.png'>",
+		"<img src='images/O.png'>",
+		"<img src='images/S.png'>"
+	];
+	var length = sequence.length;
+	var table = $('<table/>').addClass('rythm');
+
+	for (var row = 3; row > 0; --row) {
+		var rowElement = $('<tr/>');
+		for ( var column = 0; column < length; ++column) {
+			var image = (row==sequence[column])?row:0;
+			rowElement.append( 
+					$('<td/>')
+						.append(images[image])
+						.addClass( 'r' + row)
+						.addClass( 'c' + column)
+						);
+		}
+		table.append(rowElement);
+	}
+	$('#rythmTable')
+		.empty()
+		.append( table);
+	
+}
+
+function numberToSequence( number, length)
+{
+	var result = Array();
+	while (length--)
+	{
+		result.unshift( number%4);
+		number = Math.floor( number/4);
+	}
+	return result;
+}
+
+function sequenceToNumber( sequenceInput)
+{
+	var sequence = sequenceInput.slice(0);
+	var result = 0;
+	while (sequence.length)
+	{
+		result *= 4;
+		result += sequence.shift()%4;
+	}
+	return result;
+}
+
+function numberChanged()
+{
+	var number = $('#rythmNumber').val();
+	var newSequence = numberToSequence( number, 12);
+	sequenceToTable( newSequence);
+	sequence = newSequence;
+}
+
+var playerTimer = false;
+function startStop( button)
+{
+	if (playerTimer) {
+		clearInterval(playerTimer);
+		playerTimer = false;
+		$(button).text( 'Start');
+		$('#rythmTable td').removeClass('highlighted');
+		index = 0;
+	}
+	else
+	{
+		playerTimer = setInterval( playNext, 250);
+		$(button).text( 'Stop');
+	}
+}
+
+function chooseRandom()
+{
+	$('#rythmNumber').val( Math.floor( Math.random() * 16777216));
+	numberChanged();
+}
+
+function metronomeChanged()
+{
+	playAccompaniment = $('#metronome').is(':checked');
+}
+
+$( function(){
+	$('#rythmNumber')
+		.val( sequenceToNumber( sequence))
+		.change(numberChanged)
+		.keypress(numberChanged)
+		;
+	sequenceToTable( sequence);
+	$('#metronome').prop('checked', false);;
+});
+
+</script>
+</head>
+<body>
+<div id='main'>
+<div id='header'>
+<button onclick="startStop(this)">Start</button>
+<input type="number" id='rythmNumber'>
+<button onclick="chooseRandom()">Willekeurig</button>
+</div>
+<div id='rythmTable'>Deze pagina gebruikt javascript om een ritmetabel te tonen. Als je deze tekst ziet, dan werkt javascript niet in je browser.</div>
+<div id='footer'>
+<input type="checkbox" id='metronome' onchange="metronomeChanged()" value='metronome'><label for='metronome'>Metronoom</label>
+</div>
+</div>
+<script>
+</script>
+</body>
+</html>

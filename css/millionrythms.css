@@ -1,0 +1,30 @@
+body {
+	background-color: white;
+}
+
+table, th, td {
+   border: 1px solid black;
+   text-align: center;
+}
+
+table {
+    border-collapse: collapse;
+}
+
+.highlighted {
+	background-color: cyan;
+}
+
+#header, #footer {
+	margin: 5px;
+}
+
+.rythm td {
+	width: 28px;
+	height: 28px;
+}
+
+#main {
+	width: 50%;
+	margin: auto;
+}
