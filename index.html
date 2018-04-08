@@ -24,10 +24,7 @@
  * Copyright (C) Danny Havenith 2018
  */
  
-/*
- * SETUP
- * 
- */
+/// load some sounds.
 var bass = new Howl({
 	  src: ['audio/bass.mp3']
 	});
@@ -45,13 +42,28 @@ var pause = new Howl({
 var metronome = new Howl({
 	  src: ['audio/x.mp3']
 	});
-	
+
+/// mapping of numbers 0-3 to sounds
 var sounds = [ pause, bass, tone, slap];
+
+/// the rythm sequence to be played.
 var sequence = [ 1, 3, 2, 2, 3, 0, 1, 3, 0, 1, 3, 0];
+
+/// unused. fixed accompaniment rythm sequence. 
 var accompaniment = [ 3, 0 , 2, 3, 0 , 0, 3, 0 , 2, 3, 0 , 0];
+
+/// next beat to be played
 var index = 0;
+
+/// whether to play metronome/accompaniment
 var playAccompaniment = false;
 
+/**
+ * Play the next beat of the rythm.
+ *
+ * The global variable 'index' contains the index in the sequence of 
+ * the beat that will be played. This function will also increase 'index'.
+ */
 function playNext() {
 
 	if (index >= sequence.length) {
@@ -75,8 +87,47 @@ function playNext() {
 	}, 50);
 }
 
+/**
+ * event handler for clicks somewhere in the rythm table.
+ */
+function cellClicked( event)
+{
+	// find the enclosing element that has a defined row and one that
+	// has a defined column and obtain those values.
+	var rowString = $(event.target).closest('[data-row]').attr('data-row');
+	var columnString = $(event.target).closest('[data-column]').attr('data-column');
+	
+	if (typeof rowString !== 'undefined' && typeof columnString !== 'undefined') 
+	{
+		var row = parseInt( rowString);
+		var column = parseInt( columnString);
+		if (sequence[column] == row)
+		{
+			// did we click on the note? then turn it into a pause
+		    sequence[column] = 0;
+		}
+		else
+		{
+			// we clicked on an empty cell, make it that note.
+			sequence[column] = row;
+		}
+		
+		// recreate the table
+		sequenceToTable( sequence);
+		$('#rythmNumber')
+			.val( sequenceToNumber( sequence))
+	}
+	event.preventDefault();
+	return false;
+}
+
+/**
+ * Fill the element with id 'rythmTable' with a table that 
+ * represents the rythm as defined in parameter 'sequence'.
+ */
 function sequenceToTable( sequence)
 {
+	// mapping of numbers 0-3 to corresponding images.
 	var images = [
 		"<img src='images/N.png'>",
 		"<img src='images/B.png'>",
@@ -84,27 +135,41 @@ function sequenceToTable( sequence)
 		"<img src='images/S.png'>"
 	];
 	var length = sequence.length;
-	var table = $('<table/>').addClass('rythm');
+	var table = $('<table/>')
+					.addClass('rythm')
+					.click(cellClicked)
+					;
 
 	for (var row = 3; row > 0; --row) {
-		var rowElement = $('<tr/>');
+		var rowElement = $('<tr/>')
+				.addClass( 'r' + row)
+				.attr('data-row', row)
+				;
 		for ( var column = 0; column < length; ++column) {
 			var image = (row==sequence[column])?row:0;
 			rowElement.append( 
 					$('<td/>')
 						.append(images[image])
-						.addClass( 'r' + row)
 						.addClass( 'c' + column)
+						.attr('data-column', column)
 						);
 		}
 		table.append(rowElement);
 	}
 	$('#rythmTable')
 		.empty()
-		.append( table);
+		.append( table)
+		;
 	
 }
 
+/**
+ * Convert a rythm number into a rythm sequence.
+ *
+ * This function separates the number in groups of two
+ * bits, where each group dictates what will happen in one
+ * beat of the rythm.
+ */
 function numberToSequence( number, length)
 {
 	var result = Array();
@@ -116,6 +181,10 @@ function numberToSequence( number, length)
 	return result;
 }
 
+/**
+ * Given a sequence of beats, create a single
+ * number that represents the sequence.
+ */
 function sequenceToNumber( sequenceInput)
 {
 	var sequence = sequenceInput.slice(0);
@@ -128,6 +197,9 @@ function sequenceToNumber( sequenceInput)
 	return result;
 }
 
+/**
+ * Event handler for the event that the rythm number changed.
+ */
 function numberChanged()
 {
 	var number = $('#rythmNumber').val();
@@ -137,6 +209,10 @@ function numberChanged()
 }
 
 var playerTimer = false;
+
+/**
+ * Either start or stop playing the rythm.
+ */
 function startStop( button)
 {
 	if (playerTimer) {
@@ -153,17 +229,27 @@ function startStop( button)
 	}
 }
 
+/**
+ * Choose a random rythm number and update the UI.
+ */
 function chooseRandom()
 {
 	$('#rythmNumber').val( Math.floor( Math.random() * 16777216));
 	numberChanged();
 }
 
+/**
+ * React on a change to the metronome checkbox.
+ */
 function metronomeChanged()
 {
 	playAccompaniment = $('#metronome').is(':checked');
 }
 
+/**
+ * Initialize the page. This function is called when 
+ * the page DOM has fully loaded.
+ */
 $( function(){
 	$('#rythmNumber')
 		.val( sequenceToNumber( sequence))
@@ -179,13 +265,16 @@ $( function(){
 <body>
 <div id='main'>
 <div id='header'>
-<button onclick="startStop(this)">Start</button>
 <input type="number" id='rythmNumber'>
-<button onclick="chooseRandom()">Willekeurig</button>
+<button onclick="chooseRandom()">Doe maar een ritmetje</button>
 </div>
 <div id='rythmTable'>Deze pagina gebruikt javascript om een ritmetabel te tonen. Als je deze tekst ziet, dan werkt javascript niet in je browser.</div>
 <div id='footer'>
+<button onclick="startStop(this)">Start</button>
 <input type="checkbox" id='metronome' onchange="metronomeChanged()" value='metronome'><label for='metronome'>Metronoom</label>
+</div>
+<div class='explanation'>
+Klik in de tabel om het ritme aan te passen.
 </div>
 </div>
 <script>
